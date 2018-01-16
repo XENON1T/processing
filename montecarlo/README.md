@@ -42,7 +42,7 @@ cd processing/montecarlo
 
 9) Submit jobs (this creates one master job (DAG) which then submits the rest):
 ~~~~
-python mc_process.py --flavor <MC_FLAVOR> --config <MC_CONFIG> --batch-size <JOB_BATCH_SIZE> --events <NUM_EVENTS> --mc-version <MC_VERSION> --fax-version <FAX_VERSION> --pax-version <PAX_VERSION> --sciencerun <SR # (0 or 1)> --grid-type <GRID_TYPE> --preinit-macro <PREINIT_MACRO> --preinit-belt <PREINIT_BELT> --preinit-efield <PREINIT_EFIELD> --optical-setup <OPTICAL_SETUP> --source-macro <SOURCE_MACRO>
+python mc_process.py --flavor <MC_FLAVOR> --config <MC_CONFIG> --batch-size <JOB_BATCH_SIZE> --events <NUM_EVENTS> --mc-version <MC_VERSION> --fax-version <FAX_VERSION> --pax-version <PAX_VERSION> --sciencerun <SR # (0 or 1)> --preinit-macro <PREINIT_MACRO> --preinit-belt <PREINIT_BELT> --preinit-efield <PREINIT_EFIELD> --optical-setup <OPTICAL_SETUP> --source-macro <SOURCE_MACRO>
 ~~~~
 where 
 ~~~~
@@ -54,7 +54,6 @@ where
     FAX_VERSION: fax GitHub release number (default=PAX_VERSION)
     PAX_VERSION: pax (also fax if not specified above) GitHub release number (https://github.com/XENON1T/pax/releases)
     SR #: Science run numer (0, 1), adjusts some physics parameters
-    GRID_TYPE: osg (US grid), egi (EU grid)
     PREINIT_MACRO: (Optional) name of macro to use for Geant4 preinit (defaults to preinit_TPC.mac)
     PREINIT_BELT: (Optional) name of macro for setting up calibration belts (defaults to preinit_B_none.mac or depending on MC_CONFIG)
     PREINIT_EFIELD: (Optional) name of macro for varying e-field in NEST (defaults to preinit_EF_C15kVA4kV.mac)
@@ -63,7 +62,7 @@ where
 ~~~~
 For example:
 ~~~~
-python mc_process.py --flavor G4 --config AmBe_neutronISO --events 1000000 --mc-version v0.1.7 --pax-version v6.2.1 --grid-type osg
+python mc_process.py --flavor G4 --config AmBe_neutronISO --events 1000000 --mc-version v0.1.7 --pax-version v6.2.1
 ~~~~
 
 10) Check job status with:
