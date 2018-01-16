@@ -5,11 +5,11 @@
              version="4.0">
 
     <site  handle="local" arch="x86_64" os="LINUX">
-        <directory type="shared-scratch" path="/scratch/pdeperio/pegasus_scratch">
-            <file-server operation="all" url="file:///scratch/pdeperio/pegasus_scratch"/>
+        <directory type="shared-scratch" path="/scratch/jpienaar/benchmarking/processing/montecarlo/scratch">
+            <file-server operation="all" url="file:///scratch/jpienaar/benchmarking/processing/montecarlo/scratch"/>
         </directory>
-        <directory type="local-storage" path="/scratch/pdeperio/170123-AmBe/processing/montecarlo/output">
-            <file-server operation="all" url="file:///scratch/pdeperio/170123-AmBe/processing/montecarlo/output"/>
+        <directory type="local-storage" path="/scratch/jpienaar/benchmarking/processing/montecarlo/output">
+            <file-server operation="all" url="file:///scratch/jpienaar/benchmarking/processing/montecarlo/output"/>
         </directory>
     </site>
 
@@ -22,7 +22,6 @@
         <profile namespace="condor" key="+WANT_RCC_ciconnect">True</profile>
         <profile namespace="condor" key="requirements">
             (HAS_CVMFS_xenon_opensciencegrid_org) &amp;&amp;
-              ( GLIDEIN_Site =!= "Comet" ) &amp;&amp;
             (((TARGET.GLIDEIN_ResourceName =!= MY.MachineAttrGLIDEIN_ResourceName1) ||
               (RCC_Factory == "ciconnect") || (GLIDEIN_Site == "MWT2-COREOS")) &amp;&amp;
              ((TARGET.GLIDEIN_ResourceName =!= MY.MachineAttrGLIDEIN_ResourceName2) ||
@@ -31,7 +30,7 @@
               (RCC_Factory == "ciconnect") || (GLIDEIN_Site == "MWT2-COREOS")) &amp;&amp;
              ((TARGET.GLIDEIN_ResourceName =!= MY.MachineAttrGLIDEIN_ResourceName4) ||
               (RCC_Factory == "ciconnect")|| (GLIDEIN_Site == "MWT2-COREOS"))) &amp;&amp;
-            (OSGVO_OS_STRING == "RHEL 6" || RCC_Factory == "ciconnect" || (GLIDEIN_ResourceName == "MWT2-COREOS"))
+             (OSGVO_OS_STRING == "RHEL 7")
         </profile>
     </site>
 
