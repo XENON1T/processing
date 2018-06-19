@@ -155,7 +155,16 @@ export X509_USER_PROXY={x509_user_proxy}
             print(i)
 
 #Additional functions:
-def get_db(rc_days = 1, source = None):
+def get_size(start_path = '.'):
+    #https://stackoverflow.com/questions/1392413/calculating-a-directorys-size-using-python
+    total_size = 0
+    for dirpath, dirnames, filenames in os.walk(start_path):
+        for f in filenames:
+            fp = os.path.join(dirpath, f)
+            total_size += os.path.getsize(fp)
+    return total_size
+
+def getLEDCalibration(rc_days = 1):
     #This function interacts with the XENON1T runDB:
     uri = 'mongodb://eb:%s@xenon1t-daq.lngs.infn.it:27017,copslx50.fysik.su.se:27017,zenigata.uchicago.edu:27017/run'
     uri = uri % os.environ.get('MONGO_PASSWORD')
@@ -174,8 +183,11 @@ def get_db(rc_days = 1, source = None):
     dt_today = datetime.datetime.today()
     dt_recent = timedelta(days=rc_days)
     dt_begin = dt_today-dt_recent
-
-    query =  {"source.type": "LED", "start": {'$gt': dt_begin}}
+    tags = ['gain_step%d' % i for i in range(5)]
+    
+    query =  {"source.type": "LED", 
+              "start": {'$gt': dt_begin},
+              }
 
     cursor = collection.find(query)
     cursor = list(cursor)
@@ -188,6 +200,17 @@ def get_db(rc_days = 1, source = None):
         run_name = i_c['name']
         run_date = i_c['start']
         run_source = None
+        
+        run_dbtags = []
+        if 'tags' in i_c and len(i_c['tags']) > 0:            
+            for itag in i_c['tags']:
+                run_dbtags.append(itag['name'])
+        
+        #create a list of remaining led tags which are allowed
+        remaining_led_tags = [i for i in tags if i in run_dbtags]
+        if len(remaining_led_tags) <= 0:
+            continue
+        
         if 'source' in i_c:
             run_source = i_c['source']['type']
         #print(run_source, run_number, run_date)
@@ -202,7 +225,8 @@ def get_db(rc_days = 1, source = None):
         rucio_safe['rucio_rse'] = None
         rucio_safe['rucio_rule'] = None
         rucio_safe['rucio_location'] = None
-
+        rucio_safe['tag'] = run_dbtags
+        rucio_safe['size'] = i_c['raw_size_byte']
             
         for i_d in i_data:
             if i_d['host'] != 'rucio-catalogue':
@@ -218,6 +242,122 @@ def get_db(rc_days = 1, source = None):
     return safer
         
 #Main:
+def led_purge(led_store=None, purge=-1):
+    
+    #check for input path first:
+    if led_store == None:
+        return False
+    if purge == -1:
+        return False
+    
+    #1) Check for folders in the calibration dir:
+    dt_today = datetime.datetime.today()
+    dt_recent = timedelta(days=purge)
+    dt_begin = dt_today-dt_recent
+        
+    #Grab only folders which are not hidden and follow the pmt raw data pattern:
+    level1 = [f for f in os.listdir(led_store) if (not f.startswith('.') and f.startswith('led_raw_data_'))]
+    
+    purge_level = []
+    print("Remove folders which are older then {d} days".format(d=purge))
+    for il in level1:
+        #stupid condition to get a valid date and be careful to remove too much from the directory
+        if 'led_raw_data_' not in il:
+            continue
+        if len(il.split("_")[3]) != 6:
+            continue
+        if 'PMTGainCalibration' == il or 'make_hist' == il or 'gain_calculation' == il:
+            continue
+            
+        date_ext = il.split("_")[3]
+            
+        date_ext = datetime.datetime.strptime(date_ext, '%y%m%d')
+        rmfolder = os.path.join(led_store, il)
+        if date_ext < dt_begin:
+            #shutil.rmtree(rmfolder)
+            print("  <> folder", rmfolder)
+            purge_level.append(rmfolder)
+        else:
+            print(" KEEP! -> {f}".format(f=rmfolder))
+    
+    return purge_level
+
+def led_download(led_store=None, get=1):
+    
+    #Loading the Rucio part:
+    _account = "xenon-analysis"
+    _host    = "midway2"
+    _certpro = "/project/lgrandi/xenon1t/grid_proxy/xenon_service_proxy"
+
+    print("  <> Load Rucio")
+    print("     - User {user}".format(user=_account))
+    print("     - Host config {hc}".format(hc=_host))
+    rc = RucioAPI()
+    rc.SetAccount(_account)
+    rc.SetHost(_host)
+    rc.LoadProxy(_certpro)
+    rc.ConfigHost()
+    print("  <Rucio loaded>")
+    
+    #check for input path first:
+    if led_store == None:
+        return False
+    
+    #Define some standard paths for LED downloads:
+    if led_store[-1] != "/":
+        led_store+="/"
+    led_dir = "{led_store}led_raw_data_{date}".format(led_store=led_store, date="{date}")
+
+    #Get all DB entries about LED files:
+    led_call = getLEDCalibration(get)
+    
+    
+    #Analyse the runDB entries before going to the download section
+    download_success = {}
+    for key, val in led_call.items():
+        cal_day = key.split("_")[0]
+        cal_time= key.split("_")[1]
+        print("Check paths for {k}".format(k=key))
+        
+        #check first if date folder exists and create if necessary:
+        path_to_check = led_dir.format(date=cal_day)
+        if not os.path.isdir(path_to_check):
+            os.makedirs(path_to_check)
+        
+        #check for the subfolders:
+        path_to_check_sub = os.path.join(path_to_check, "{date}_{time}".format(date=cal_day, time=cal_time) )
+        if not os.path.isdir(path_to_check_sub):
+            os.makedirs(path_to_check_sub)
+        
+        f_size = int(get_size(path_to_check_sub))
+        f_size_db = int(val['size'])
+        
+        if f_size == f_size_db:
+            download_success["{date}_{time}".format(date=cal_day, time=cal_time)] = "Available"
+            continue
+        
+        #Download:
+        print("Start download: {k}".format(k=key))
+        rc_loc = led_call[ "{date}_{time}".format(date=cal_day, time=cal_time)]['rucio_location']
+        if rc_loc == None:
+            continue
+        rc_scope = rc_loc.split(":")[0]
+        rc_dname = rc_loc.split(":")[1]
+                
+        rc.Download(scope=rc_scope, dname=rc_dname, destination=path_to_check_sub)
+        print(" Downloaded to: ", path_to_check_sub)
+        
+        #check for success by database and folder comparison:
+        f_size = int(get_size(path_to_check_sub))
+        f_size_db = int(val['size'])
+        
+        if f_size == f_size_db:
+            download_success["{date}_{time}".format(date=cal_day, time=cal_time)] = True
+        
+        print("Download success {k}".format(k=download_success))
+    
+    return download_success
+        
 def led_keeper():
 
     parser = argparse.ArgumentParser(description="Submit ruciax tasks to batch queue.")
@@ -232,113 +372,24 @@ def led_keeper():
     _get  = args.get
     _purge = args.purge
 
-    #Instead of parsing command line input we define Rucio information here:
-    # -Attention: This configuration runs for the xenon-analysis user
-    #             which only handles read-only access to Rucio.
-    _account = "xenon-analysis"
-    _host    = "midway2"
-    _certpro = "/project/lgrandi/xenon1t/grid_proxy/xenon_service_proxy"
-
-    #Loading the Rucio part:
-    print("  <> Load Rucio")
-    print("     - User {user}".format(user=_account))
-    print("     - Host config {hc}".format(hc=_host))
-    rc = RucioAPI()
-    rc.SetAccount(_account)
-    rc.SetHost(_host)
-    rc.LoadProxy(_certpro)
-    rc.ConfigHost()
-    
-    rc.Whoami()
-    print("     - Rucio loaded")
-
-    #Define some standard paths for LED downloads:
+    #basic path for led calibration:
     led_store = "/project/lgrandi/pmt_calibration/PMTGainCalibration/"
-    led_dir = "{led_store}led_raw_data_{date}".format(led_store=led_store, date="{date}")
-
-
-    #Get all DB entries about LED files:
-    led_call = get_db(_get, source="LED")
     
+    if int(_get) > 0:
+        print("Download to path {path}".format(path=led_store))
+        dw_status = led_download(led_store, _get)
+        for dwS_key, dwS_val in dw_status.items():
+            print(dwS_key, dwS_val)
     
-    #Analyse the runDB entries before going to the download section
-    led_callibration_dates = {}
-    for key, val in led_call.items():
-        cal_day = key.split("_")[0]
-        cal_time= key.split("_")[1]
-        
-        if cal_day not in led_callibration_dates:
-            led_callibration_dates[cal_day] = []
-        else:
-            led_callibration_dates[cal_day].append(cal_time)
-            
-    
-    #Run the download:
-    for kpath, vpath in led_callibration_dates.items():
-        
-        path_to_check = led_dir.format(date=kpath)
-        for i_vpath in vpath:
-            path_to_check_sub = os.path.join(path_to_check, "{date}_{time}".format(date=kpath, time=i_vpath) )
-            print(path_to_check_sub)
-            if not os.path.isdir(path_to_check_sub):
-                #Create paths and download according LED data:
-                
-                #1) Create led_raw_data_XXXXXX path if not exists:
-                if not os.path.isdir(path_to_check):
-                    os.makedirs(path_to_check)
-                    
-                #2) Start Rucio download to this dir
-                print("Start download")
-                rc_loc = led_call[ "{date}_{time}".format(date=kpath, time=i_vpath)]['rucio_location']
-                print(" -> ", rc_loc)
-                if rc_loc == None:
-                    continue
-                
-                rc_scope = rc_loc.split(":")[0]
-                rc_dname = rc_loc.split(":")[1]
-                
-                rc.Download(scope=rc_scope, dname=rc_dname, destination=path_to_check_sub)
-                print(" Downloaded to: ", path_to_check_sub)
-            else:
-                print("Path {p} exists - Nothing to is downloaded".format(p=path_to_check_sub))
-                print("Hint: Remove it manually and restart download again if needed")
-    
+    #Here goes the PMT calibration:
     
     
     #Delete folders which are older then N days:
-    
     if int(_purge) > -1:
-        #1) Check for folders in the calibration dir:
-        dt_today = datetime.datetime.today()
-        dt_recent = timedelta(days=_purge)
-        dt_begin = dt_today-dt_recent
-        
-        #Grab only folders which are not hidden and follow the pmt raw data pattern:
-        level1 = [f for f in os.listdir(led_store) if (not f.startswith('.') and f.startswith('led_raw_data_'))]
-        
-        print("Remove folders which are older then {d} days".format(d=_purge))
-        for il in level1:
-            #stupid condition to get a valid date and be careful to remove too much from the directory
-            if 'led_raw_data_' not in il:
-                continue
-            if len(il.split("_")[3]) != 6:
-                continue
-            if 'PMTGainCalibration' == il or 'make_hist' == il or 'gain_calculation' == il:
-                continue
-            
-            date_ext = il.split("_")[3]
-            
-            date_ext = datetime.datetime.strptime(date_ext, '%y%m%d')
-            rmfolder = os.path.join(led_store, il)
-            if date_ext < dt_begin:
-                shutil.rmtree(rmfolder)
-                print("  <> folder", rmfolder)
-            else:
-                print(" KEEP! -> {f}".format(f=rmfolder))
-            
-    else:
-        print("Nothing to purge")
-    
+        print("Purge LED calibration data oder than {purge} days:".format(purge=_purge))
+        dw_purge = led_purge(led_store, _purge)
+        for ifolders in dw_purge:
+            print("purged:", ifolders)
 
     
 if __name__ == '__main__':
