@@ -31,7 +31,8 @@
               (RCC_Factory == "ciconnect") || (GLIDEIN_Site == "MWT2-COREOS")) &amp;&amp;
              ((TARGET.GLIDEIN_ResourceName =!= MY.MachineAttrGLIDEIN_ResourceName4) ||
               (RCC_Factory == "ciconnect")|| (GLIDEIN_Site == "MWT2-COREOS"))) &amp;&amp;
-            (OSGVO_OS_STRING == "RHEL 6" || RCC_Factory == "ciconnect" || (GLIDEIN_ResourceName == "MWT2-COREOS"))
+            (OSGVO_OS_STRING == "RHEL 6" || OSGVO_OS_STRING == "RHEL 7" ||
+             RCC_Factory == "ciconnect" || (GLIDEIN_ResourceName == "MWT2-COREOS"))
         </profile>
     </site>
 

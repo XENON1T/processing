@@ -14,6 +14,7 @@
 # $12 - preinit_field
 # $13 - optical_setup
 # $14 - source_macro
+# $15 - experiment 
 
 function terminate {
 
@@ -67,6 +68,9 @@ if [[ "$8" == 1 ]]; then
     SAVE_RAW=$8
 fi
 
+# Set Experiment
+EXPERIMENT=${15}
+
 # For configuring model parameters and cuts
 # Warning: Currently only used for G4-NEST, fax and lax, but NOT nSort emission models 
 SCIENCERUN=$9
@@ -109,7 +113,7 @@ RELEASEDIR=${CVMFSDIR}/releases/mc/${MCVERSION}
 PAX_LIB_DIR=${CVMFSDIR}/releases/anaconda/2.4/envs/pax_${PAXVERSION}/lib/
 
 # Setup Geant4 macros
-MACROSDIR=${RELEASEDIR}/macros
+MACROSDIR=${RELEASEDIR}/macros/${EXPERIMENT}
 
 PREINIT_MACRO=${10}
 if [[ -z $PREINIT_MACRO ]];
@@ -223,9 +227,9 @@ then
 fi
 
 if [[ ${MCFLAVOR} == G4p10 ]]; then
-    source ${CVMFSDIR}/software/mc_setup.sh
+    source ${CVMFSDIR}/software/mc_setup_G4p10.sh
 else
-    source ${CVMFSDIR}/software/mc_old_setup.sh
+    source ${CVMFSDIR}/software/mc_setup_G4p9.sh
 fi
 if [ $? -ne 0 ];
 then
@@ -268,9 +272,10 @@ G4NSORT_FILENAME=${G4_FILENAME}_Sort
 
 # Geant4 stage
 G4EXEC=${RELEASEDIR}/xenon1t_${MCFLAVOR}
-ln -sf ${MACROSDIR} # For reading e.g. input spectra from CWD
+SPECTRADIR=${RELEASEDIR}/macros
+ln -sf ${SPECTRADIR} # For reading e.g. input spectra from CWD
 
-(time ${G4EXEC} -p ${PREINIT_MACRO} -b ${PREINIT_BELT} -e ${PREINIT_EFIELD} -s ${OPTICAL_SETUP} -f ${SOURCE_MACRO} -n ${NEVENTS} -o ${G4_FILENAME}.root;) 2>&1 | tee ${G4_FILENAME}.log
+(time ${G4EXEC} -p ${PREINIT_MACRO} -b ${PREINIT_BELT} -e ${PREINIT_EFIELD} -s ${OPTICAL_SETUP} -f ${SOURCE_MACRO} -n ${NEVENTS} -d ${EXPERIMENT} -o ${G4_FILENAME}.root;) 2>&1 | tee ${G4_FILENAME}.log
 if [ $? -ne 0 ];
 then
     terminate 10
@@ -281,7 +286,13 @@ if [[ ${CONFIG} == *"optPhot"* ]]; then
     terminate 0
 fi
 
-source ${CVMFSDIR}/software/mc_old_setup.sh
+# Skip the rest for XENONnT, will move along as XENONnT chain takes shape
+if [[ ${EXPERIMENT} == "XENONnT" ]]; then
+    terminate 0
+fi
+
+CPATH=${OLD_CPATH}
+source ${CVMFSDIR}/software/mc_setup_G4p9.sh
 
 if [[ ${MCFLAVOR} == NEST ]]; then
     # Patch stage
@@ -300,9 +311,20 @@ if [[ ${MCFLAVOR} == NEST ]]; then
     fi
 else
     # nSort Stage
-    NSORTEXEC=${RELEASEDIR}/nSort
     ln -sf ${RELEASEDIR}/data
-    (time ${NSORTEXEC} -m 2 -f ${EFIELD} -s 2 -i ${G4_FILENAME};) 2>&1 | tee ${G4NSORT_FILENAME}.log
+    
+    # Old nSort executable
+    #NSORTEXEC=${RELEASEDIR}/nSort
+    #(time ${NSORTEXEC} -m 2 -s 2 -i ${G4_FILENAME} -f ${EFIELD};) 2>&1 | tee ${G4NSORT_FILENAME}.log
+    
+    # XENON1T SR0 models
+    ln -sf ${RELEASEDIR}/nSortSrc/* .
+    source deactivate
+    CPATH=${OLD_CPATH}
+    rm -r ~/.cache/rootpy/*
+    source activate pax_${FAXVERSION}
+    python GenerateGeant4.py --InputFile ${G4_FILENAME}.root --OutputFilename ${G4NSORT_FILENAME}.root
+    
     if [ $? -ne 0 ];
     then
       terminate 12
@@ -326,11 +348,11 @@ then
 fi
 
 # fax+pax run-dependent configuration
-FAX_PAX_CONFIG="[WaveformSimulator]truth_file_name=\"${FAX_FILENAME}\";diffusion_constant_liquid=${DIFFUSION_CONSTANT} * cm**2 / s;[DEFAULT]drift_velocity_liquid=${DRIFT_VELOCITY} * um / ns;electron_lifetime_liquid=${ELECTRON_LIFETIME} * us"
+FAX_PAX_CONFIG="[WaveformSimulator]truth_file_name=\"${FAX_FILENAME}\";"
 
 # Do not save raw waveforms
 if [[ ${SAVE_RAW} == 0 && ${PAXVERSION} == ${FAXVERSION} ]]; then
-    (time paxer --input ${PAX_INPUT_FILENAME}.root --config XENON1T SimulationMCInput --config_string "${FAX_PAX_CONFIG}" --output ${PAX_FILENAME};) 2>&1 | tee ${PAX_FILENAME}.log
+    (time paxer --input ${PAX_INPUT_FILENAME}.root --config XENON1T SimulationMCInput SR${SCIENCERUN}_parameters --config_string "${FAX_PAX_CONFIG}" --output ${PAX_FILENAME};) 2>&1 | tee ${PAX_FILENAME}.log
 
     if [ $? -ne 0 ];
     then
@@ -339,7 +361,7 @@ if [[ ${SAVE_RAW} == 0 && ${PAXVERSION} == ${FAXVERSION} ]]; then
 
 # Save raw waveforms or different fax/pax versions
 else
-    (time paxer --input ${PAX_INPUT_FILENAME}.root --config XENON1T reduce_raw_data SimulationMCInput --config_string "${FAX_PAX_CONFIG}" --output ${RAW_FILENAME};) 2>&1 | tee ${RAW_FILENAME}.log
+    (time paxer --input ${PAX_INPUT_FILENAME}.root --config XENON1T reduce_raw_data SimulationMCInput SR${SCIENCERUN}_parameters --config_string "${FAX_PAX_CONFIG}" --output ${RAW_FILENAME};) 2>&1 | tee ${RAW_FILENAME}.log
 
     if [ $? -ne 0 ];
     then
@@ -357,7 +379,7 @@ else
 
     fi
 
-    (time paxer --ignore_rundb --input ${RAW_FILENAME} --config XENON1T --config_string "${FAX_PAX_CONFIG}" --output ${PAX_FILENAME};) 2>&1 | tee ${PAX_FILENAME}.log
+    (time paxer --ignore_rundb --input ${RAW_FILENAME} --config XENON1T SR${SCIENCERUN}_parameters --config_string "${FAX_PAX_CONFIG}" --output ${PAX_FILENAME};) 2>&1 | tee ${PAX_FILENAME}.log
 
     if [ $? -ne 0 ];
     then
@@ -388,7 +410,7 @@ rm ${FAX_FILENAME}.*  # Peak-by-peak file with all photoionization info
 
 
 # hax stage
-HAX_TREEMAKERS="Corrections Basics Fundamentals DoubleScatter LargestPeakProperties TotalProperties Extended"
+HAX_TREEMAKERS="Corrections Basics Fundamentals CorrectedDoubleS1Scatter LargestPeakProperties TotalProperties Extended"
 
 # ROOT output
 (time haxer --main_data_paths ${OUTDIR} --input ${PAX_FILENAME##*/} --pax_version_policy loose --treemakers ${HAX_TREEMAKERS} --force_reload;) 2>&1 | tee ${HAX_FILENAME}.log
