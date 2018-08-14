@@ -5,8 +5,8 @@ export PATH=/project/lgrandi/anaconda3/bin:$PATH
 source activate pax_head
 
 #Execute the led helper:
-#SCRIPT_PATH='/project/lgrandi/xenon1t/processing/led_helper/'
-SCRIPT_PATH='/home/bauermeister/ToolBox/processing/led_helper/'
+SCRIPT_PATH='/project/lgrandi/xenon1t/processing/led_helper/'
+#SCRIPT_PATH='/home/bauermeister/ToolBox/processing/led_helper/'
 SCRIPT_EXE='led_helper.py'
 SCRIPT_GET=' --get 7'
 SCRIPT_PURGE=' --purge 50'
