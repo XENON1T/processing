@@ -363,7 +363,8 @@ def led_keeper():
     parser = argparse.ArgumentParser(description="Submit ruciax tasks to batch queue.")
 
     parser.add_argument('--get', type=int,
-                        help="Get LED data of he past N days (--get <N>) with default N=1")
+                        help="Get LED data of he past N days (--get <N>) with default N=1",
+                        default=0)
     parser.add_argument('--purge', type=int, default=-1,
                         help="Purge LED data of he past N days (--get <N>) with default N=-1")
     
@@ -375,14 +376,22 @@ def led_keeper():
     #basic path for led calibration:
     led_store = "/project/lgrandi/pmt_calibration/PMTGainCalibration/"
     
+    ##Get all DB entries about LED files:
+    led_call = getLEDCalibration(_get)
+    
+    #get a list of dates:
+    dates = []
+    for i, j in led_call.items():
+        date = i.split("_")[0]
+        if date not in dates:
+            dates.append(date)
+    
+    #Do downloads if necessary:
     if int(_get) > 0:
         print("Download to path {path}".format(path=led_store))
         dw_status = led_download(led_store, _get)
         for dwS_key, dwS_val in dw_status.items():
             print(dwS_key, dwS_val)
-    
-    #Here goes the PMT calibration:
-    
     
     #Delete folders which are older then N days:
     if int(_purge) > -1:
