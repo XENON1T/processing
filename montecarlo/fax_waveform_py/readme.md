@@ -21,7 +21,7 @@ You will need Xenon1T code to run this, for testing run `python fax_production_m
 
 
 ### Customize your own production
-__One__ In `fax_production_control.py`
+__First__ In `fax_production_control.py`
  - Under class `Setup`
      - Edit line 49 and 51 to switch between single config and multiple configs, Here the config means fax production configs, not pax configs
      - Edit `_generate_config()`: here you can make copies of default_config and change individual items in it and create a list of configurations you want to run. (All configurations must have differnt names)
@@ -36,6 +36,14 @@ __Second__ go to `fax_production_process.py`
  - Under class `BuildMiniTree`
      - Edit `_process()`: add the minitrees you want in hax.minitrees.load()
      - Edit `hax_init`: specify hax.init() conditions
+
+__Update__ 
+ - Codes for production processes have been moved into `production_process` folder with their individual files for easy read and modification.
+ - `personalize_config` has been set to 'False' by default, as 'XENON1T SR1_parameters' pax configs are being loaded.
+ - Switched to using hdf instead of pickle for data saving.
+
+__Tip__
+ - If you want use different pax version for simulation and processing, you can comment out `ProcessRaw` when using one pax version, and uncomment it after the production finish, and then run the code again. Since every process have build-in `check`, the raw data won't be regenerated again and kept which is produced with the first pax version.
 
 ## Thanks to 
 
