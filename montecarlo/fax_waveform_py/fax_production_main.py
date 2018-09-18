@@ -50,7 +50,7 @@ if __name__ == '__main__':
     num_group = 2  # Break all jobs into a handful of groups. You can put number_job here,
     # but let each node run ~10 jobs as number_group = number_job/10 would speed up you production
     # so that jobs in the same group will be run on one node one by one without waiting for node after one another
-    max_num_submit = 50  # Maximum number of jobs running on submit node
+    max_num_submit = 50  # Maximum number of jobs running on submit node. NOTE: this should be < 100
     crl = Batch()
     crl.execute(head_directory=head_directory, num_group=num_group)
 

@@ -17,7 +17,7 @@ You will need Xenon1T code to run this, for testing run `python fax_production_m
  - `head_directory`: where all the produced files will be stored
  - `default_config`: where you can change the configs
  - `num_group`: of all the jobs you have, how many group do you want them divided into. Each group will be submitted to midway computation node individually.
- - `max_num_submit`: the maximum number of jobs will you allow running on computation nodes under your user name.
+ - `max_num_submit`: the maximum number of jobs will you allow running on computation nodes under your user name. **NOTE: This should be < 100, and typically < 50**.
 
 
 ### Customize your own production
