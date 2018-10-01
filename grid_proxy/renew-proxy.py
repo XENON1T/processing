@@ -5,8 +5,8 @@ import sys
 import subprocess
 import shutil
 
-CERT_LOCATION = '/xenon/grid_proxy/rucio_service_cert.pem'
-KEY_LOCATION = '/xenon/grid_proxy/rucio_service_key.pem'
+CERT_LOCATION = '/xenon/grid_certificates/rucio_service_cert.pem'
+KEY_LOCATION = '/xenon/grid_certificates/rucio_service_key.pem'
 PROXY_LOCATION = '/xenon/grid_proxy/xenon_service_proxy'
 CERT_PASS = 'o665I995JPLk'
 DESTINATION_HOST = 'midway.rcc.uchicago.edu'
@@ -26,5 +26,3 @@ os.chmod(PROXY_LOCATION, 0o640)
 #shutil.chown(PROXY_LOCATION, group='pi-lgrandi')
 
 subprocess.call('scp {0} {1}'.format(PROXY_LOCATION, DESTINATION), shell=True)
-
-
