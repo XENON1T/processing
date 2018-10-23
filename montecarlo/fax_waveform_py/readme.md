@@ -44,6 +44,7 @@ __Update__
 
 __Tip__
  - If you want use different pax version for simulation and processing, you can comment out `ProcessRaw` when using one pax version, and uncomment it after the production finish, and then run the code again. Since every process have build-in `check`, the raw data won't be regenerated again and kept which is produced with the first pax version.
+ - Because of the limitation of numpy dtype, config name is limited to U32 a maximum 32-character string.
 
 ## Thanks to 
 
