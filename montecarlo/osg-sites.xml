@@ -21,18 +21,13 @@
         <profile namespace="condor" key="+WantExperimental">True</profile>
         <profile namespace="condor" key="+WANT_RCC_ciconnect">True</profile>
         <profile namespace="condor" key="requirements">
-            (HAS_CVMFS_xenon_opensciencegrid_org) &amp;&amp;
-              ( GLIDEIN_Site =!= "Comet" ) &amp;&amp;
-            (((TARGET.GLIDEIN_ResourceName =!= MY.MachineAttrGLIDEIN_ResourceName1) ||
-              (RCC_Factory == "ciconnect") || (GLIDEIN_Site == "MWT2-COREOS")) &amp;&amp;
-             ((TARGET.GLIDEIN_ResourceName =!= MY.MachineAttrGLIDEIN_ResourceName2) ||
-              (RCC_Factory == "ciconnect") || (GLIDEIN_Site == "MWT2-COREOS")) &amp;&amp;
-             ((TARGET.GLIDEIN_ResourceName =!= MY.MachineAttrGLIDEIN_ResourceName3)  ||
-              (RCC_Factory == "ciconnect") || (GLIDEIN_Site == "MWT2-COREOS")) &amp;&amp;
-             ((TARGET.GLIDEIN_ResourceName =!= MY.MachineAttrGLIDEIN_ResourceName4) ||
-              (RCC_Factory == "ciconnect")|| (GLIDEIN_Site == "MWT2-COREOS"))) &amp;&amp;
-            (OSGVO_OS_STRING == "RHEL 6" || OSGVO_OS_STRING == "RHEL 7" ||
-             RCC_Factory == "ciconnect" || (GLIDEIN_ResourceName == "MWT2-COREOS"))
+            OSGVO_OS_STRING == "RHEL 7" &amp;&amp;
+            GFAL_VERIFIED &amp;&amp;
+            HAS_CVMFS_xenon_opensciencegrid_org &amp;&amp;
+            HAS_FILE_lib64_libgcc_s_so_1 &amp;&amp;
+            (GLIDEIN_Site =!= "IIT" &amp;&amp;
+             GLIDEIN_Site =!= "NotreDame" &amp;&amp;
+             GLIDEIN_Site =!= "OSG_US_NMSU_AGGIE_GRID")
         </profile>
     </site>
 
