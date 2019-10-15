@@ -227,7 +227,7 @@ then
 fi
 
 if [[ ${MCFLAVOR} == G4p10 ]]; then
-    source ${CVMFSDIR}/software/mc_setup_G4p10.sh
+    source ${CVMFSDIR}/software/mc_setup_G4_10.3p3.sh
 else
     source ${CVMFSDIR}/software/mc_setup_G4p9.sh
 fi
