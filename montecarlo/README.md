@@ -1,5 +1,5 @@
 # MC Simulation Production
-Repository for scripts to run xenon1t MC code
+Repository for scripts to run XENON1T/XENONnT MONTECARLO code
 
 ## Instructions
 
@@ -95,7 +95,7 @@ Job logs can be found in:
 ~~~~
 /scratch/${USER}/<production_name>/processing/montecarlo/${USER}/pegasus/montecarlo/*
 ~~~~
-The logs are in 00/00 and have yhe extension. .out
+The logs are in 00/00 and have the extension .out
 
 **12)** Once everything's complete and verified (e.g. checked logs for errors), we will want to keep all the results on Midway for all analysts to access. You may either use:
   a) ```rsync``` to directly copy to Midway, or
