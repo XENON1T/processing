@@ -79,7 +79,7 @@ if [[ ${MCFLAVOR} == G4p10 ]]; then
 
 **10)** Check job status with:
 ~~~~
-condor_q
+condor_q (condor_rm ${USER} to remove all the jobs by user)
 pegasus-status -l /scratch/${USER}/<production_name>/processing/montecarlo/${USER}/pegasus/montecarlo
 ~~~~
 
@@ -95,6 +95,7 @@ Job logs can be found in:
 ~~~~
 /scratch/${USER}/<production_name>/processing/montecarlo/${USER}/pegasus/montecarlo/*
 ~~~~
+The logs are in 00/00 and have yhe extension. .out
 
 **12)** Once everything's complete and verified (e.g. checked logs for errors), we will want to keep all the results on Midway for all analysts to access. You may either use:
   a) ```rsync``` to directly copy to Midway, or
