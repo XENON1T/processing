@@ -13,7 +13,7 @@ https://xecluster.lngs.infn.it/dokuwiki/doku.php?id=xenon:xenon1t:cmp:computing:
 
 **3)** ssh to:
 ~~~~
-login.xenon.ci-connect.net
+login.xenon.ci-connect.net or @login-el7.xenon.ci-connect.net
 ~~~~
 or ```login.ci-connect.uchicago.edu```.
 
@@ -148,12 +148,12 @@ where
     PAX_VERSION: pax (also fax if not specified above) GitHub release number (https://github.com/XENON1T/pax/releases)
     SR #: Science run numer (0, 1), adjusts some physics parameters
     SAVE_WAVEFORMS: Flag to save raw waveforms (disk space intensive); 0 - off (default), 1 - on
-    PREINIT_MACRO: (Optional) name of macro to use for Geant4 preinit (defaults to preinit_TPC.mac)
-    PREINIT_BELT: (Optional) name of macro for setting up calibration belts (defaults to preinit_B_none.mac or depending on MC_CONFIG)
-    PREINIT_EFIELD: (Optional) name of macro for varying e-field in NEST (defaults to preinit_EF_C15kVA4kV.mac)
-    OPTICAL_SETUP: (Optional) name of macro to use for Geant4 optical setup (defaults to setup_optical_S1.mac)
-    SOURCE_MACRO: (Optional) name of macro to run in Geant4 (defaults to run_<MC_CONFIG>.mac)
-    EXPERIMENT: (Optional) name of experiment (XENON1T, XENONnT) to implement (defaults to XENON1T) 
+    PREINIT_MACRO: name of macro to use for Geant4 preinit (defaults to preinit_TPC.mac)
+    PREINIT_BELT: name of macro for setting up calibration belts (defaults to preinit_B_none.mac or depending on MC_CONFIG)
+    PREINIT_EFIELD: name of macro for varying e-field in NEST (defaults to preinit_EF_C15kVA4kV.mac)
+    OPTICAL_SETUP: name of macro to use for Geant4 optical setup (defaults to setup_optical_S1.mac)
+    SOURCE_MACRO: name of macro to run in Geant4 (defaults to run_<MC_CONFIG>.mac)
+    EXPERIMENT: name of experiment (XENON1T, XENONnT) to implement (defaults to XENON1T) 
 ~~~~
 
 This will create output files in "output" directory.
