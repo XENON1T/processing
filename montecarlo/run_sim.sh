@@ -24,7 +24,9 @@ function terminate {
     
     # copy files on stash                                                                    
     #gfal-copy -p file://${G4_FILENAME}.tgz gsiftp://gridftp.grid.uchicago.edu:2811/cephfs/srm/xenon/xenon1t/simulations/mc_$MCVERSION/pax_$PAXVERSION/$MCFLAVOR/$CONFIG/${JOBID}_output.tar.bz2
-    
+    # copy files to dali
+    # if you uncomment this, modify Pegasus to not copy to /scratch on OSG
+    #gfal-copy -p file://${G4_FILENAME}.tgz gsiftp://sdm06.rcc.uchicago.edu:2811/dali/lgrandi/xenon1t/simulations/mc_$MCVERSION/pax_$PAXVERSION/$MCFLAVOR/$CONFIG/${JOBID}_output.tar.bz2
     # Cleanup
     rm -fr $work_dir
     
