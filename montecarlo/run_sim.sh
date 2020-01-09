@@ -315,7 +315,7 @@ else
     
     # Old nSort executable
     NSORTEXEC=${RELEASEDIR}/nSort
-    (time ${NSORTEXEC} -m 2 -s 2 -i ${G4_FILENAME} -f ${EFIELD};) 2>&1 | tee ${G4NSORT_FILENAME}.log
+    (time ${NSORTEXEC} -m 2 -s 2 -i ${G4_FILENAME} -f ${EFIELD} -d XENONnT;) 2>&1 | tee ${G4NSORT_FILENAME}.log
 fi
 
 # Skip the rest for XENONnT, will move along as XENONnT chain takes shape
