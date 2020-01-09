@@ -287,9 +287,9 @@ if [[ ${CONFIG} == *"optPhot"* ]]; then
 fi
 
 # Skip the rest for XENONnT, will move along as XENONnT chain takes shape
-if [[ ${EXPERIMENT} == "XENONnT" ]]; then
-    terminate 0
-fi
+#if [[ ${EXPERIMENT} == "XENONnT" ]]; then
+#    terminate 0
+#fi
 
 CPATH=${OLD_CPATH}
 source ${CVMFSDIR}/software/mc_setup_G4p9.sh
