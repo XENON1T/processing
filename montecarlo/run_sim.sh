@@ -316,12 +316,129 @@ else
     ln -sf ${RELEASEDIR}/data
     
     # Old nSort executable
-    NSORTEXEC=${RELEASEDIR}/nSort
-    (time ${NSORTEXEC} -m 2 -s 2 -i ${G4_FILENAME} -f ${EFIELD} -d XENONnT;) 2>&1 | tee ${G4NSORT_FILENAME}.log
+    #NSORTEXEC=${RELEASEDIR}/nSort
+    #(time ${NSORTEXEC} -m 2 -s 2 -i ${G4_FILENAME} -f ${EFIELD};) 2>&1 | tee ${G4NSORT_FILENAME}.log
     
+    # XENON1T SR0 models
+    ln -sf ${RELEASEDIR}/nSortSrc/* .
+    source deactivate
+    CPATH=${OLD_CPATH}
+    rm -r ~/.cache/rootpy/*
+    source activate pax_${FAXVERSION}
+    python GenerateGeant4.py --InputFile ${G4_FILENAME}.root --OutputFilename ${G4NSORT_FILENAME}.root
+    
+    if [ $? -ne 0 ];
+    then
+      terminate 12
+    fi
+    PAX_INPUT_FILENAME=${G4NSORT_FILENAME}
 fi
 
-# Skip the rest for XENONnT, will move along as XENONnT chain takes shape
-if [[ ${EXPERIMENT} == "XENONnT" ]]; then
-    terminate 0
+RAW_FILENAME=${PAX_INPUT_FILENAME}_raw
+PAX_FILENAME=${PAX_INPUT_FILENAME}_pax
+HAX_FILENAME=${PAX_INPUT_FILENAME}_hax
+FAX_FILENAME=${FILENAME}_faxtruth
+LAX_FILENAME=${PAX_INPUT_FILENAME}_lax
+
+# fax+pax stages
+source deactivate
+source activate pax_${FAXVERSION}
+# make sure libopcodes is in the LD_LIBRARY_PATH
+if [[ ! `/bin/env` =~ .*${PAX_LIB_DIR}.* ]];
+then
+    export LD_LIBRARY_PATH=$PAX_LIB_DIR:$LD_LIBRARY_PATH
 fi
+
+# fax+pax run-dependent configuration
+FAX_PAX_CONFIG="[WaveformSimulator]truth_file_name=\"${FAX_FILENAME}\";"
+
+# Do not save raw waveforms
+if [[ ${SAVE_RAW} == 0 && ${PAXVERSION} == ${FAXVERSION} ]]; then
+    (time paxer --input ${PAX_INPUT_FILENAME}.root --config XENON1T SimulationMCInput SR${SCIENCERUN}_parameters --config_string "${FAX_PAX_CONFIG}" --output ${PAX_FILENAME};) 2>&1 | tee ${PAX_FILENAME}.log
+
+    if [ $? -ne 0 ];
+    then
+	terminate 13
+    fi
+
+# Save raw waveforms or different fax/pax versions
+else
+    (time paxer --input ${PAX_INPUT_FILENAME}.root --config XENON1T reduce_raw_data SimulationMCInput SR${SCIENCERUN}_parameters --config_string "${FAX_PAX_CONFIG}" --output ${RAW_FILENAME};) 2>&1 | tee ${RAW_FILENAME}.log
+
+    if [ $? -ne 0 ];
+    then
+	terminate 14
+    fi
+
+    if [[ ${PAXVERSION} != ${FAXVERSION} ]];
+    then
+	    source activate pax_${PAXVERSION}
+        # make sure libopcodes is in the LD_LIBRARY_PATH
+        if [[ ! `/bin/env` =~ .*${PAX_LIB_DIR}.* ]];
+        then
+            export LD_LIBRARY_PATH=$PAX_LIB_DIR:$LD_LIBRARY_PATH
+        fi
+
+    fi
+
+    (time paxer --ignore_rundb --input ${RAW_FILENAME} --config XENON1T SR${SCIENCERUN}_parameters --config_string "${FAX_PAX_CONFIG}" --output ${PAX_FILENAME};) 2>&1 | tee ${PAX_FILENAME}.log
+
+    if [ $? -ne 0 ];
+    then
+	terminate 15
+    fi
+
+    if [[ ${SAVE_RAW} == 0 ]]; then
+	rm -r ${RAW_FILENAME}
+    fi
+fi
+
+source activate pax_${FAXVERSION}
+# make sure libopcodes is in the LD_LIBRARY_PATH
+if [[ ! `/bin/env` =~ .*${PAX_LIB_DIR}.* ]];
+then
+    export LD_LIBRARY_PATH=$PAX_LIB_DIR:$LD_LIBRARY_PATH
+fi
+
+# Flatten fax truth info
+FAXSORT_FILENAME=${FAX_FILENAME}_sort
+FAXSORT_OUTPUT_FORMAT=2 # Pickle + ROOT
+(time python ${CVMFSDIR}/releases/processing/montecarlo/fax_waveform/TruthSorting_arrays.py ${FAX_FILENAME}.csv ${FAXSORT_FILENAME} ${FAXSORT_OUTPUT_FORMAT};) 2>&1 | tee ${FAXSORT_FILENAME}.log
+if [ $? -ne 0 ];
+then
+    terminate 16
+fi
+rm ${FAX_FILENAME}.*  # Peak-by-peak file with all photoionization info
+
+
+# hax stage
+HAX_TREEMAKERS="Corrections Basics Fundamentals CorrectedDoubleS1Scatter LargestPeakProperties TotalProperties Extended"
+
+# ROOT output
+(time haxer --main_data_paths ${OUTDIR} --input ${PAX_FILENAME##*/} --pax_version_policy loose --treemakers ${HAX_TREEMAKERS} --force_reload;) 2>&1 | tee ${HAX_FILENAME}.log
+if [ $? -ne 0 ];
+then
+  terminate 17
+fi
+
+# Pickle output
+(time haxer --main_data_paths ${OUTDIR} --input ${PAX_FILENAME##*/} --pax_version_policy loose --treemakers ${HAX_TREEMAKERS} --force_reload --preferred_minitree_format pklz;) 2>&1 | tee -a ${HAX_FILENAME}.log
+if [ $? -ne 0 ];
+then
+  terminate 18
+fi
+
+# Move hax output
+cp *.root *.pklz ${OUTDIR} 
+
+# lax stage
+(time laxer --run_number -1 --sciencerun ${SCIENCERUN} --pax_version ${PAXVERSION#"v"} --minitree_path ${OUTDIR} --filename ${PAX_FILENAME##*/} --output_path ${LAX_FILENAME};) 2>&1 | tee ${LAX_FILENAME}.log
+
+if [ $? -ne 0 ];
+then
+  terminate 19
+fi
+
+#rm ${PAX_FILENAME}.root  # Delete pax output for now
+
+terminate 0
