@@ -165,7 +165,7 @@ def get_configs(experiment):
             versions = glob.glob(MC_PATH + '/*')
             latest_dir = max(versions, key=os.path.getctime)
 
-        MACROS_PATH = latest_dir + '/macros/' + experiment
+        MACROS_PATH = MC_PATH + '/er_arianna/macros/' + experiment
         
         if os.path.isdir(MACROS_PATH):
             configs = glob.glob(MACROS_PATH + '/run_*.mac')
