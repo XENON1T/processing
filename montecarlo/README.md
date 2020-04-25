@@ -82,6 +82,10 @@ if [[ ${MCFLAVOR} == G4p10 ]]; then
 condor_q
 pegasus-status -l /scratch/${USER}/<production_name>/processing/montecarlo/${USER}/pegasus/montecarlo
 ~~~~
+you can get a detailed output with
+~~~~
+condor_q -better-analyze
+~~~~
 
 **11)** Output is temporarily written to:
 ~~~~
