@@ -7,7 +7,7 @@ Repository for scripts to run xenon1t MC code
 
 **1)** Get a CI-Connect account (second step after your Midway account):
 
-https://xecluster.lngs.infn.it/dokuwiki/doku.php?id=xenon:xenon1t:cmp:computing:midway_cluster:instructions
+https://xe1t-wiki.lngs.infn.it/doku.php?id=xenon:xenon1t:cmp:computing:midway_cluster:instructions
 
 **2)** Add your ssh key to your http://www.osgconnect.net profile (instructions: http://bit.ly/2pGOcYY).  This may take up to an hour to propagate to the login node in the next step.
 
