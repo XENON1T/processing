@@ -11,10 +11,9 @@
 # $9 - science run
 # $10 - preinit_macro
 # $11 - preinit_belt
-# $12 - preinit_field
-# $13 - optical_setup
-# $14 - source_macro
-# $15 - experiment 
+# $12 - optical_setup
+# $13 - source_macro
+# $14 - experiment 
 
 function terminate {
 
@@ -71,7 +70,7 @@ if [[ "$8" == 1 ]]; then
 fi
 
 # Set Experiment
-EXPERIMENT=${15}
+EXPERIMENT=${14}
 
 # For configuring model parameters and cuts
 # Warning: Currently only used for G4-NEST, fax and lax, but NOT nSort emission models 
@@ -158,25 +157,7 @@ else
 fi
 echo "Preinit belt: $PREINIT_BELT" 
 
-PREINIT_EFIELD=${12}
-if [[ -z $PREINIT_EFIELD ]];
-then
-    if [[ ${SCIENCERUN} == 0 ]]; then
-        PREINIT_EFIELD=preinit_EF_C12kVA4kV.mac
-    else
-        PREINIT_EFIELD=preinit_EF_C8kVA4kV.mac
-    fi
-    PREINIT_EFIELD=${MACROSDIR}/${PREINIT_EFIELD}
-else
-    if [[ -f ${start_dir}/${PREINIT_EFIELD} ]]; then
-        PREINIT_EFIELD=${start_dir}/${PREINIT_EFIELD}
-    else
-        PREINIT_EFIELD=${MACROSDIR}/${PREINIT_EFIELD}
-    fi
-fi
-echo "Preinit efield: $PREINIT_EFIELD"
-
-OPTICAL_SETUP=${13}
+OPTICAL_SETUP=${12}
 if [[ -z $OPTICAL_SETUP ]];
 then
     OPTICAL_SETUP=${MACROSDIR}/setup_optical.mac
@@ -189,7 +170,7 @@ else
 fi
 echo "Optical macro: $OPTICAL_SETUP" 
 
-SOURCE_MACRO=${14}
+SOURCE_MACRO=${13}
 if [[ -z $SOURCE_MACRO ]];
 then
     SOURCE_MACRO=${MACROSDIR}/run_${CONFIG}.mac
@@ -277,7 +258,7 @@ G4EXEC=${RELEASEDIR}/xenon1t_${MCFLAVOR}
 SPECTRADIR=${RELEASEDIR}/macros
 ln -sf ${SPECTRADIR} # For reading e.g. input spectra from CWD
 
-(time ${G4EXEC} -p ${PREINIT_MACRO} -b ${PREINIT_BELT} -e ${PREINIT_EFIELD} -s ${OPTICAL_SETUP} -f ${SOURCE_MACRO} -n ${NEVENTS} -d ${EXPERIMENT} -o ${G4_FILENAME}.root;) 2>&1 | tee ${G4_FILENAME}.log
+(time ${G4EXEC} -p ${PREINIT_MACRO} -b ${PREINIT_BELT} -s ${OPTICAL_SETUP} -f ${SOURCE_MACRO} -n ${NEVENTS} -d ${EXPERIMENT} -o ${G4_FILENAME}.root;) 2>&1 | tee ${G4_FILENAME}.log
 if [ $? -ne 0 ];
 then
     terminate 10

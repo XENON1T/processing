@@ -198,7 +198,6 @@ def generate_mc_workflow(mc_config,
                          batch_size,
                          preinit_macro,
                          preinit_belt,
-                         preinit_efield,
                          optical_setup,
                          source_macro, 
                          experiment):
@@ -216,7 +215,6 @@ def generate_mc_workflow(mc_config,
     :param batch_size: number of events to generate per job
     :param preinit_macro: macro to use to preinitialize MC
     :param preinit_belt: macro to use to preinitialize calibration belt
-    :param preinit_efield: macro to use to preinitialize efield (for NEST only)
     :param optical_setup: macro to setup optics
     :param source_macro: macro to use for MC generation
     :param experiment: choice of XENON1T or XENONnT for MC
@@ -246,12 +244,6 @@ def generate_mc_workflow(mc_config,
             if "_" + belt_type in mc_config:
                 belt_pos = mc_config[mc_config.index(belt_type):]
         preinit_belt = "preinit_B_{0}.mac".format(belt_pos)
-
-    if preinit_efield is None:
-        if sciencerun == 0:
-            preinit_efield = "preinit_EF_C12kVA4kV.mac"
-        else:
-            preinit_efield = "preinit_EF_C8kVA4kV.mac"
 
     if optical_setup is None:
         optical_setup = 'setup_optical.mac'
@@ -293,19 +285,6 @@ def generate_mc_workflow(mc_config,
                                     "local")
         preinit_belt_input.addPFN(file_pfn)
         dax.addFile(preinit_belt_input)
-
-    preinit_efield_input = None
-    if not check_macro(preinit_efield, mc_version, experiment):
-        if not os.path.exists(preinit_efield):
-            sys.stderr.write("Preinit efield not in OASIS or current "
-                             "directory, exiting.\n")
-            sys.exit(1)
-        preinit_efield_input = Pegasus.DAX3.File(preinit_efield)
-        macro_path = os.path.join(os.getcwd(), preinit_efield)
-        file_pfn = Pegasus.DAX3.PFN("file://{0}".format(macro_path),
-                                    "local")
-        preinit_efield_input.addPFN(file_pfn)
-        dax.addFile(preinit_efield_input)
 
     source_macro_input = None
     if not check_macro(source_macro, mc_version, experiment):
@@ -351,7 +330,6 @@ def generate_mc_workflow(mc_config,
                                          str(sciencerun),
                                          preinit_macro,
                                          preinit_belt,
-                                         preinit_efield,
                                          optical_setup,
                                          source_macro, 
                                          experiment)
@@ -367,7 +345,6 @@ def generate_mc_workflow(mc_config,
                                          str(sciencerun),
                                          preinit_macro,
                                          preinit_belt,
-                                         preinit_efield,
                                          optical_setup,
                                          source_macro,
                                          experiment)
@@ -375,8 +352,6 @@ def generate_mc_workflow(mc_config,
                 run_sim_job.uses(preinit_macro_input, link=Pegasus.DAX3.Link.INPUT)
             if preinit_belt_input:
                 run_sim_job.uses(preinit_belt_input, link=Pegasus.DAX3.Link.INPUT)
-            if preinit_efield_input:
-                run_sim_job.uses(preinit_efield_input, link=Pegasus.DAX3.Link.INPUT)
             if optical_macro_input:
                 run_sim_job.uses(optical_macro_input, link=Pegasus.DAX3.Link.INPUT)
             if source_macro_input:
@@ -468,9 +443,6 @@ def run_main():
     parser.add_argument('--preinit-belt', dest='preinit_belt',
                         action='store', default=None,
                         help='preinit belt to use')
-    parser.add_argument('--preinit-efield', dest='preinit_efield',
-                        action='store', default=None,
-                        help='preinit efield to use')
     parser.add_argument('--optical-setup', dest='optical_setup',
                         action='store', default=None,
                         help='macro to use to setup optical properties')
@@ -496,7 +468,6 @@ def run_main():
                      args[0].sciencerun,
                      args[0].preinit_macro,
                      args[0].preinit_belt,
-                     args[0].preinit_efield,
                      args[0].optical_setup,
                      args[0].source_macro,
                      args_exp[0].experiment]
@@ -512,7 +483,6 @@ def run_main():
                                             args[0].batch_size,
                                             args[0].preinit_macro,
                                             args[0].preinit_belt,
-                                            args[0].preinit_efield,
                                             args[0].optical_setup,
                                             args[0].source_macro,
                                             args_exp[0].experiment)
